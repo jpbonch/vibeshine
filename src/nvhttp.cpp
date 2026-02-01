@@ -885,11 +885,11 @@ namespace nvhttp {
     client_root = client;
   }
 
-  void add_authorized_client(const std::string &name, std::string &&cert) {
+  std::string add_authorized_client(const std::string &name, std::string cert) {
     client_t &client = client_root;
     named_cert_t named_cert;
     named_cert.name = name;
-    named_cert.cert = std::move(cert);
+    named_cert.cert = cert;  // Keep copy for storage
     named_cert.uuid = uuid_util::uuid_t::generate().string();
     named_cert.hdr_profile.clear();
     named_cert.display_mode.clear();
@@ -900,11 +900,21 @@ namespace nvhttp {
     named_cert.prefer_10bit_sdr.reset();
     named_cert.last_seen.reset();
     named_cert.config_overrides.clear();
-    client.named_devices.emplace_back(named_cert);
+
+    // Add to cert_chain immediately for authentication
+    cert_chain.add(crypto::x509(cert));
+
+    client.named_devices.emplace_back(std::move(named_cert));
 
     if (!config::sunshine.flags[config::flag::FRESH_STATE]) {
       save_state();
     }
+
+    return client.named_devices.back().uuid;
+  }
+
+  bool remove_authorized_client(const std::string &uuid) {
+    return unpair_client(uuid);
   }
 
   // Thread-local storage for peer certificate during SSL verification

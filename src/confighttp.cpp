@@ -1561,6 +1561,111 @@ namespace confighttp {
   }
 
   /**
+   * @brief Add an authorized client with a pre-shared certificate (for Orbit integration).
+   * @param response The HTTP response object.
+   * @param request The HTTP request object.
+   * The body for the post request should be JSON serialized in the following format:
+   * @code{.json}
+   * {
+   *   "name": "Client Name",
+   *   "cert": "-----BEGIN CERTIFICATE-----\n..."
+   * }
+   * @endcode
+   *
+   * @api_examples{/api/clients/add| POST| {"name":"OrbitClient","cert":"-----BEGIN CERTIFICATE-----..."}}
+   */
+  void addClient(resp_https_t response, req_https_t request) {
+    if (!check_content_type(response, request, "application/json")) {
+      return;
+    }
+    if (!authenticate(response, request)) {
+      return;
+    }
+
+    print_req(request);
+
+    std::stringstream ss;
+    ss << request->content.rdbuf();
+
+    try {
+      nlohmann::json output_tree;
+      nlohmann::json input_tree = nlohmann::json::parse(ss);
+
+      const std::string name = input_tree.value("name", "");
+      std::string cert = input_tree.value("cert", "");
+
+      if (name.empty() || cert.empty()) {
+        bad_request(response, request, "Both 'name' and 'cert' fields are required");
+        return;
+      }
+
+      std::string uuid = nvhttp::add_authorized_client(name, std::move(cert));
+
+      output_tree["status"] = true;
+      output_tree["uuid"] = uuid;
+      send_response(response, output_tree);
+
+      BOOST_LOG(info) << "Added authorized client: "sv << name << " (uuid: "sv << uuid << ")"sv;
+    } catch (std::exception &e) {
+      BOOST_LOG(warning) << "AddClient: "sv << e.what();
+      bad_request(response, request, e.what());
+    }
+  }
+
+  /**
+   * @brief Remove an authorized client by UUID (for Orbit integration).
+   * @param response The HTTP response object.
+   * @param request The HTTP request object.
+   * The body for the post request should be JSON serialized in the following format:
+   * @code{.json}
+   * {
+   *   "uuid": "client-uuid-here"
+   * }
+   * @endcode
+   *
+   * @api_examples{/api/clients/remove| POST| {"uuid":"4D7BB2DD-5704-A405-B41C-891A022932E1"}}
+   */
+  void removeClient(resp_https_t response, req_https_t request) {
+    if (!check_content_type(response, request, "application/json")) {
+      return;
+    }
+    if (!authenticate(response, request)) {
+      return;
+    }
+
+    print_req(request);
+
+    std::stringstream ss;
+    ss << request->content.rdbuf();
+
+    try {
+      nlohmann::json output_tree;
+      nlohmann::json input_tree = nlohmann::json::parse(ss);
+
+      const std::string uuid = input_tree.value("uuid", "");
+
+      if (uuid.empty()) {
+        bad_request(response, request, "'uuid' field is required");
+        return;
+      }
+
+      bool removed = nvhttp::remove_authorized_client(uuid);
+      output_tree["status"] = removed;
+
+      if (removed) {
+        BOOST_LOG(info) << "Removed authorized client with uuid: "sv << uuid;
+      } else {
+        BOOST_LOG(info) << "Client with uuid not found: "sv << uuid;
+      }
+
+      send_response(response, output_tree);
+    } catch (std::exception &e) {
+      BOOST_LOG(warning) << "RemoveClient: "sv << e.what();
+      bad_request(response, request, e.what());
+    }
+  }
+
+  /**
    * @brief Unpair a client.
    * @param response The HTTP response object.
    * @param request The HTTP request object.
@@ -3168,6 +3273,8 @@ namespace confighttp {
     server.resource["^/api/clients/hdr-profiles$"]["GET"] = getHdrProfiles;
     server.resource["^/api/clients/update$"]["POST"] = updateClient;
     server.resource["^/api/clients/unpair$"]["POST"] = unpair;
+    server.resource["^/api/clients/add$"]["POST"] = addClient;
+    server.resource["^/api/clients/remove$"]["POST"] = removeClient;
     server.resource["^/api/clients/disconnect$"]["POST"] = disconnectClient;
     server.resource["^/api/apps/close$"]["POST"] = closeApp;
     server.resource["^/api/session/status$"]["GET"] = getSessionStatus;

@@ -243,6 +243,24 @@ namespace nvhttp {
   void erase_all_clients();
 
   /**
+   * @brief Add an authorized client with a pre-shared certificate (for Orbit integration).
+   * @param name Friendly name for the client.
+   * @param cert PEM-encoded X.509 certificate.
+   * @return UUID of the newly added client.
+   * @examples
+   * std::string uuid = nvhttp::add_authorized_client("OrbitClient", pem_cert);
+   * @examples_end
+   */
+  std::string add_authorized_client(const std::string &name, std::string cert);
+
+  /**
+   * @brief Remove an authorized client by UUID (alias for unpair_client).
+   * @param uuid The UUID of the client to remove.
+   * @return true if client was found and removed, false otherwise.
+   */
+  bool remove_authorized_client(const std::string &uuid);
+
+  /**
    * @brief Persist current nvhttp-related state (paired clients, update subsystem markers, etc.).
    * @note Exposed so subsystems (e.g. update) can trigger a save after mutating persisted fields.
    */
