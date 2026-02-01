@@ -54,7 +54,8 @@ jobs:
             -G Ninja \
             -S . \
             -DCMAKE_BUILD_TYPE=Release \
-            -DSUNSHINE_ASSETS_DIR=assets
+            -DSUNSHINE_ASSETS_DIR=assets \
+            -DBUILD_DOCS=OFF
           ninja -C build
 
       - name: Package
