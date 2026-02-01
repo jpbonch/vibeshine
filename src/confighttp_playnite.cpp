@@ -796,13 +796,16 @@ namespace confighttp {
   }  // namespace
 
   bool is_helper_log_source(const std::string &source) {
-    return source == "display_helper" || source == "playnite" || source == "playnite_launcher" || source == "wgc";
+    return source == "display_helper" || source == "tray_helper" || source == "playnite" ||
+           source == "playnite_launcher" || source == "wgc";
   }
 
   bool read_helper_log(const std::string &source, std::string &out) {
     std::string base_name;
     if (source == "display_helper") {
       base_name = "sunshine_display_helper";
+    } else if (source == "tray_helper") {
+      base_name = "vibeshine_tray";
     } else if (source == "playnite") {
       base_name = "sunshine_playnite";
     } else if (source == "playnite_launcher") {
@@ -1022,6 +1025,14 @@ namespace confighttp {
         }
       }
       {
+        std::filesystem::path p = base / L"vibeshine_tray.log";
+        std::string data;
+        std::optional<std::filesystem::file_time_type> mtime;
+        if (read_file_if_exists(p, data, &mtime)) {
+          entries.push_back(ZipDataEntry {p.filename().string(), std::move(data), mtime});
+        }
+      }
+      {
         std::filesystem::path p = base / L"sunshine_wgc_helper.log";
         std::string data;
         std::optional<std::filesystem::file_time_type> mtime;
@@ -1036,6 +1047,7 @@ namespace confighttp {
       add_session_logs_with_prefix(log_dir, "sunshine_playnite_launcher-");
       add_session_logs_with_prefix(log_dir, "sunshine_launcher-");
       add_session_logs_with_prefix(log_dir, "sunshine_display_helper-");
+      add_session_logs_with_prefix(log_dir, "vibeshine_tray-");
       add_session_logs_with_prefix(log_dir, "sunshine_wgc_helper-");
     };
 
@@ -1144,9 +1156,10 @@ namespace confighttp {
     std::wstring prefix;
   };
 
-  static const std::array<CrashDumpTarget, 4> kCrashDumpTargets = {{
+  static const std::array<CrashDumpTarget, 5> kCrashDumpTargets = {{
     {"sunshine.exe", L"sunshine.exe."},
     {"sunshine_display_helper.exe", L"sunshine_display_helper.exe."},
+    {"vibeshine_tray.exe", L"vibeshine_tray.exe."},
     {"sunshine_wgc_capture.exe", L"sunshine_wgc_capture.exe."},
     {"playnite-launcher.exe", L"playnite-launcher.exe."},
   }};

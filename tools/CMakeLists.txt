@@ -116,3 +116,23 @@ target_link_libraries(sunshine_display_helper
         taskschd
         ${PLATFORM_LIBRARIES})
 target_compile_options(sunshine_display_helper PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
+
+# Tray helper: dedicated Windows system tray process
+add_executable(vibeshine_tray
+        sunshine_tray_helper.cpp
+        ${CMAKE_SOURCE_DIR}/src/platform/windows/ipc/pipes.cpp
+        ${CMAKE_SOURCE_DIR}/src/platform/windows/ipc/misc_utils.cpp
+        ${CMAKE_SOURCE_DIR}/src/logging.cpp
+        ${CMAKE_SOURCE_DIR}/third-party/tray/src/tray_windows.c)
+set_target_properties(vibeshine_tray PROPERTIES CXX_STANDARD 23)
+target_compile_definitions(vibeshine_tray PRIVATE SUNSHINE_ASSETS_DIR="${SUNSHINE_ASSETS_DIR_DEF}")
+target_link_libraries(vibeshine_tray
+        ${Boost_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        user32
+        gdi32
+        shell32
+        ole32
+        wtsapi32
+        ${PLATFORM_LIBRARIES})
+target_compile_options(vibeshine_tray PRIVATE ${SUNSHINE_COMPILE_OPTIONS})

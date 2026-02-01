@@ -42,6 +42,10 @@ if (TARGET sunshine_display_helper)
         COMMENT "Copying sunshine_display_helper next to Sunshine binary")
 endif()
 
+if (TARGET vibeshine_tray)
+        add_dependencies(sunshine vibeshine_tray)
+endif()
+
 # Enable libdisplaydevice logging in the main Sunshine binary only
 target_compile_definitions(sunshine PRIVATE SUNSHINE_USE_DISPLAYDEVICE_LOGGING)
 

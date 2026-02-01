@@ -3006,6 +3006,7 @@ namespace confighttp {
     platf::restart();
   }
 
+
   /**
    * @brief Generate a new API token with specified scopes.
    * @param response The HTTP response object.
