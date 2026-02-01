@@ -117,3 +117,4 @@ In contrast, GPT‑5:
 * Thinks much longer up front to ensure that the code it writes is accurate and bug‑free and fits requirements.
 * Holistically understands the codebase, and considers how requested changes impact existing modules.
 * Can answer just about any question in a codebase, from how a feature works to how to add a new one.
+
