@@ -162,7 +162,7 @@ namespace system_tray {
     }
 
     ProcessHandler &helper_proc() {
-      static ProcessHandler handler(/*use_job=*/false);
+      static ProcessHandler handler(/*use_job=*/true);
       return handler;
     }
 
