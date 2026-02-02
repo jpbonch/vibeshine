@@ -22,6 +22,58 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Download SudoVDA drivers from official Vibeshine release
+        shell: pwsh
+        run: |
+          # Download the official Vibeshine MSI which contains signed SudoVDA drivers
+          $vibeshine_version = "1.14.4"
+          $msi_url = "https://github.com/Nonary/vibeshine/releases/download/${vibeshine_version}/Vibeshine.msi"
+          $msi_path = "Vibeshine.msi"
+
+          Write-Host "Downloading Vibeshine MSI from $msi_url"
+          Invoke-WebRequest -Uri $msi_url -OutFile $msi_path
+
+          # Extract MSI contents
+          $extract_dir = "msi_extracted"
+          Write-Host "Extracting MSI contents..."
+          msiexec /a $msi_path /qn TARGETDIR="$PWD\$extract_dir"
+
+          # Wait for extraction to complete
+          Start-Sleep -Seconds 5
+
+          # Find and copy SudoVDA driver files
+          $sudovda_dest = "src_assets/windows/drivers/sudovda"
+          $sudovda_src = Get-ChildItem -Path $extract_dir -Recurse -Directory | Where-Object { $_.Name -eq "sudovda" } | Select-Object -First 1
+
+          if ($sudovda_src) {
+            Write-Host "Found SudoVDA drivers at: $($sudovda_src.FullName)"
+            Get-ChildItem -Path $sudovda_src.FullName | ForEach-Object {
+              Write-Host "Copying: $($_.Name)"
+              Copy-Item -Path $_.FullName -Destination $sudovda_dest -Force
+            }
+          } else {
+            # Try alternate extraction with lessmsi or direct file search
+            Write-Host "SudoVDA directory not found, searching for individual files..."
+            $driver_files = @("SudoVDA.dll", "SudoVDA.inf", "sudovda.cat", "sudovda.cer", "nefconc.exe", "uninstall.bat")
+            foreach ($file in $driver_files) {
+              $found = Get-ChildItem -Path $extract_dir -Recurse -Filter $file -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($found) {
+                Write-Host "Found and copying: $file"
+                Copy-Item -Path $found.FullName -Destination $sudovda_dest -Force
+              } else {
+                Write-Host "WARNING: Could not find $file"
+              }
+            }
+          }
+
+          # List what we have
+          Write-Host "SudoVDA driver files:"
+          Get-ChildItem -Path $sudovda_dest
+
+          # Cleanup
+          Remove-Item -Path $msi_path -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path $extract_dir -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
@@ -55,7 +107,8 @@ jobs:
             -S . \
             -DCMAKE_BUILD_TYPE=Release \
             -DSUNSHINE_ASSETS_DIR=assets \
-            -DBUILD_DOCS=OFF
+            -DBUILD_DOCS=OFF \
+            -DBUILD_TESTS=OFF
           ninja -C build
 
       - name: Package
