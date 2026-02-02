@@ -113,15 +113,21 @@ jobs:
           ninja -C build
 
       - name: Package
+        shell: pwsh
         run: |
-          mkdir -p artifacts
-          cd build
-          cpack -G ZIP
-          mv ./cpack_artifacts/Sunshine.zip ../artifacts/Vibeshine-Windows-portable.zip || mv ./*.zip ../artifacts/ || true
+          # Install to staging directory
+          cmake --install build --prefix staging
+
+          # Create portable zip
+          Compress-Archive -Path staging/* -DestinationPath Vibeshine-Windows-portable.zip
+
+          # List contents for debugging
+          Write-Host "Package contents:"
+          Get-ChildItem -Path staging -Recurse | Select-Object FullName
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Vibeshine-Windows
-          path: artifacts/
-          if-no-files-found: warn
+          path: Vibeshine-Windows-portable.zip
+          if-no-files-found: error
