@@ -108,7 +108,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DSUNSHINE_ASSETS_DIR=assets \
             -DBUILD_DOCS=OFF \
-            -DBUILD_TESTS=OFF
+            -DBUILD_TESTS=OFF \
+            -DSUNSHINE_ENABLE_WEBRTC=OFF
           ninja -C build
 
       - name: Package
